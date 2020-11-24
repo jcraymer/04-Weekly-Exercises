@@ -99,9 +99,10 @@ These exercises will reiterate what you learned in the "Mapping data with R" tut
   1. Add the `Starbucks` locations to a world map. Add an aesthetic to the world map that sets the color of the points according to the ownership type. What, if anything, can you deduce from this visualization?
 
 ```{r}
-world <- get_stamenmap(bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
-                       maptype = "terrain",
-                       zoom = 2)
+world <- get_stamenmap(
+    bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
+    maptype = "terrain",
+    zoom = 2)
 
 # Plot the points on the map
   ggmap(world) + # creates the map "background"
@@ -110,7 +111,7 @@ world <- get_stamenmap(bbox = c(left = -180, bottom = -57, right = 179, top = 82
              alpha = .3, 
              size = .1) +
   theme_map() + 
-  theme(legend.background = element_blank()) 
+  theme(legend.background = element_blank())  
 ```
 - There little to no Joint Venture owned Starbucks in North America.
 
@@ -125,7 +126,6 @@ Cities <- get_stamenmap(bbox = c(left = -94.1226, bottom = 44.5963 , right = -92
   ggmap(Cities) + # creates the map "background"
   geom_point(data = Starbucks, 
              aes(x = Longitude, y = Latitude),
-             alpha = .3, 
              size = .5) +
   theme_map() 
 ```
@@ -146,8 +146,7 @@ Cities <- get_stamenmap(
 # Plot the points on the map
   ggmap(Cities) + # creates the map "background"
   geom_point(data = Starbucks, 
-             aes(x = Longitude, y = Latitude),
-             alpha = .3, 
+             aes(x = Longitude, y = Latitude), 
              size = .5) +
   theme_map() 
 ```
@@ -158,13 +157,12 @@ Cities <- get_stamenmap(
 Cities <- get_stamenmap(
     bbox = c(left = -94.1226, bottom = 44.5963 , right = -92.1506, top = 45.3406), 
     maptype = "terrain",
-    zoom = 8)
+    zoom = 9)
 
 # Plot the points on the map
   ggmap(Cities) + # creates the map "background"
   geom_point(data = Starbucks, 
              aes(x = Longitude, y = Latitude),
-             alpha = .3, 
              size = .5) +
   annotate(geom = "point",
            x = -93.1691, 
@@ -216,13 +214,14 @@ sstarbucks_locs_us <- Starbucks %>%
 ```
 
 ```{r}
+states_map <- map_data("state")
 starbucks_with_2018_pop_est %>% 
   ggplot() +
   geom_map(map = states_map,
            aes(map_id = state_name,
                fill = starbucks_per_10000)) +
   geom_point(data = sstarbucks_locs_us, 
-             aes(x = Latitude, y = Longitude), 
+             aes(y = Latitude, x = Longitude), 
              color = "pink", 
              size = .1) +
   #This assures the map looks decently nice:
@@ -260,24 +259,37 @@ juliet_favorite_loc <- tibble(
   * Create a `leaflet` map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best. Color your 3 favorite places differently than the ones that are not in your top 3 (HINT: `colorFactor()`). Add a legend that explains what the colors mean.
 
 ```{r}
+pal <- colorFactor("viridis", domain = juliet_favorite_loc$top3)
+
 leaflet(data = juliet_favorite_loc) %>% 
   addProviderTiles(providers$OpenStreetMap.DE) %>%
-  addPolylines(lng = ~long, 
-             lat = ~lat, 
-             label = ~place, 
-             weight = 3, 
-             opacity = .5, 
-             color = "blue") %>% 
   addCircles(lng = ~long, 
              lat = ~lat, 
              label = ~place, 
              weight = 10, 
              opacity = 1, 
-             color = col2hex("navyblue")) 
+             color = ~pal(top3)) 
 ```
 
   
   * Connect all your locations together with a line in a meaningful way (you may need to order them differently in the original data).  
+  
+```{r}
+pal <- colorFactor("viridis", domain = juliet_favorite_loc$top3)
+
+leaflet(data = juliet_favorite_loc) %>% 
+  addProviderTiles(providers$OpenStreetMap.DE) %>%
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, 
+             color = ~pal(top3)) %>% 
+  addPolylines(lng = ~long, 
+             lat = ~lat, 
+             weight = 3, 
+             opacity = .5)
+```
   
   * If there are other variables you want to add that could enhance your plot, do that now.  
   
@@ -339,7 +351,9 @@ departure_by_station_client <- Trips %>%
   ggmap(wash_dc) + 
   geom_point(data = departure_by_station_client, 
              aes(y = lat, x = long, 
-             color = prop_cas))
+             color = prop_cas)) + 
+  labs(x = 'Longitude', y = 'Latitude') + 
+  ggtitle('Departures By Sation')
 ```
   
 ### COVID-19 data
@@ -348,7 +362,27 @@ The following exercises will use the COVID-19 data from the NYT.
 
   11. Create a map that colors the states by the most recent cumulative number of COVID-19 cases (remember, these data report cumulative numbers so you don't need to compute that). Describe what you see. What is the problem with this map?
   
+```{r}
+states_map <- map_data("state")
+
+covid19 %>% 
+  group_by(state) %>% 
+  summarise(total = max(cases)) %>% 
+  ggplot() + 
+  geom_map(map = states_map, 
+           aes(map_id = state, 
+               fill = total)) +
+ # creates the map "background"
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  theme_map()
+```
+  
   12. Now add the population of each state to the dataset and color the states by most recent cumulative cases/10,000 people. See the code for doing this with the Starbucks data. You will need to make some modifications. 
+
+```{r}
+
+```
+
   
   13. **CHALLENGE** Choose 4 dates spread over the time period of the data and create the same map as in exercise 12 for each of the dates. Display the four graphs together using faceting. What do you notice?
   
@@ -356,11 +390,40 @@ The following exercises will use the COVID-19 data from the NYT.
 
 These exercises use the datasets `MplsStops` and `MplsDemo` from the `carData` library. Search for them in Help to find out more information.
 
-  14. Use the `MplsStops` dataset to find out how many stops there were for each neighborhood and the proportion of stops that were for a suspicious vehicle or person. Sort the results from most to least number of stops. Save this as a dataset called `mpls_suspicious` and display the table.  
-  
+  14. Use the `MplsStops` dataset to find out how many stops there were for each neighborhood and the proportion of stops that were for a suspicious vehicle or person. Sort the results from most to least number of stops. Save this as a dataset called `mpls_suspicious` and display the table.
+
+```{r}
+#mpls_suspicious <- 
+MplsStops %>% 
+  group_by(neighborhood) %>%
+  summarise(number_stops = n(),
+            n_suspicious = sum(problem == "suspicious"),
+            prop_suspicious = n_suspicious/number_stops) %>% 
+  arrange(desc(number_stops))
+```
+
   15. Use a `leaflet` map and the `MplsStops` dataset to display each of the stops on a map as a small point. Color the points differently depending on whether they were for suspicious vehicle/person or a traffic stop (the `problem` variable). HINTS: use `addCircleMarkers`, set `stroke = FAlSE`, use `colorFactor()` to create a palette.  
   
+```{r}
+pal_problem <- colorFactor("viridis", 
+                           domain = MplsStops$problem)
+leaflet(MplsStops) %>% 
+  addProviderTiles(providers$Stamen.Toner) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat,
+             color = ~pal_problem(problem), 
+             weight = .5, 
+             opacity = .4) %>% 
+  addLegend(pal = pal_problem, 
+            values = ~problem)
+```
+
+  
   16. Save the folder from moodle called Minneapolis_Neighborhoods into your project/repository folder for this assignment. Make sure the folder is called Minneapolis_Neighborhoods. Use the code below to read in the data and make sure to **delete the `eval=FALSE`**. Although it looks like it only links to the .sph file, you need the entire folder of files to create the `mpls_nbhd` data set. These data contain information about the geometries of the Minneapolis neighborhoods. Using the `mpls_nbhd` dataset as the base file, join the `mpls_suspicious` and `MplsDemo` datasets to it by neighborhood (careful, they are named different things in the different files). Call this new dataset `mpls_all`.
+```{r}
+
+```
+  
 
 ```{r, eval=FALSE}
 mpls_nbhd <- st_read("Minneapolis_Neighborhoods/Minneapolis_Neighborhoods.shp", quiet = TRUE)
@@ -374,6 +437,7 @@ mpls_nbhd <- st_read("Minneapolis_Neighborhoods/Minneapolis_Neighborhoods.shp", 
 ## GitHub link
 
   19. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 04_exercises.Rmd, provide a link to the 04_exercises.md file, which is the one that will be most readable on GitHub.
+
 
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
