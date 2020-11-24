@@ -393,8 +393,7 @@ These exercises use the datasets `MplsStops` and `MplsDemo` from the `carData` l
   14. Use the `MplsStops` dataset to find out how many stops there were for each neighborhood and the proportion of stops that were for a suspicious vehicle or person. Sort the results from most to least number of stops. Save this as a dataset called `mpls_suspicious` and display the table.
 
 ```{r}
-#mpls_suspicious <- 
-MplsStops %>% 
+mpls_suspicious <- MplsStops %>% 
   group_by(neighborhood) %>%
   summarise(number_stops = n(),
             n_suspicious = sum(problem == "suspicious"),
@@ -420,20 +419,38 @@ leaflet(MplsStops) %>%
 
   
   16. Save the folder from moodle called Minneapolis_Neighborhoods into your project/repository folder for this assignment. Make sure the folder is called Minneapolis_Neighborhoods. Use the code below to read in the data and make sure to **delete the `eval=FALSE`**. Although it looks like it only links to the .sph file, you need the entire folder of files to create the `mpls_nbhd` data set. These data contain information about the geometries of the Minneapolis neighborhoods. Using the `mpls_nbhd` dataset as the base file, join the `mpls_suspicious` and `MplsDemo` datasets to it by neighborhood (careful, they are named different things in the different files). Call this new dataset `mpls_all`.
+
 ```{r}
-
-```
-  
-
-```{r, eval=FALSE}
 mpls_nbhd <- st_read("Minneapolis_Neighborhoods/Minneapolis_Neighborhoods.shp", quiet = TRUE)
+
+mpls_all <- mpls_nbhd %>% 
+  left_join(mpls_suspicious, 
+            by = c("BDNAME" = "neighborhood")) %>% 
+  left_join(MplsDemo, 
+            by = c("BDNAME" = "neighborhood"))
 ```
 
   17. Use `leaflet` to create a map from the `mpls_all` data  that colors the neighborhoods by `prop_suspicious`. Display the neighborhood name as you scroll over it. Describe what you observe in the map.
   
+```{r}
+leaflet(mpls_all) %>%
+  leaflet(MplsStops) %>% 
+  addProviderTiles(providers$Stamen.Toner) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat,
+             color = ~pal_problem(problem), 
+             weight = .5, 
+             opacity = .4) %>% 
+  addLegend(pal = pal_problem, 
+            values = ~problem)
+```
+  
   18. Use `leaflet` to create a map of your own choosing. Come up with a question you want to try to answer and use the map to help answer that question. Describe what your map shows. 
-  
-  
+
+```{r}
+
+```
+
 ## GitHub link
 
   19. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 04_exercises.Rmd, provide a link to the 04_exercises.md file, which is the one that will be most readable on GitHub.
