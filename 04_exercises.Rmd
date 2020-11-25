@@ -111,9 +111,11 @@ world <- get_stamenmap(
              alpha = .3, 
              size = .1) +
   theme_map() + 
-  theme(legend.background = element_blank())  
+  theme(legend.background = element_blank()) + 
+  labs(title = "World Wide Starbucks Locations by Ownership Type")
 ```
-- There little to no Joint Venture owned Starbucks in North America.
+
+- There are little to no Joint Venture owned Starbucks in North America. Additionally, the concentration of starbucks locations is very dense in the United States and more spread out across other continents. 
 
   2. Construct a new map of Starbucks locations in the Twin Cities metro area (approximately the 5 county metro area).  
 
@@ -127,13 +129,15 @@ Cities <- get_stamenmap(bbox = c(left = -94.1226, bottom = 44.5963 , right = -92
   geom_point(data = Starbucks, 
              aes(x = Longitude, y = Latitude),
              size = .5) +
-  theme_map() 
+  theme_map() +
+  labs(title = "St. Paul / Minneapolis Starbucks Locations")
+    
 ```
 
 
   3. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map).  
 
-It changes how far out you see St.Paul and Minneapolis. Smaller zooms will zoom in closer larger zooms will zoom out farther (I.E. 9 vs 12).
+- It changes how far out you see St.Paul and Minneapolis. Smaller zooms will zoom in closer larger zooms will zoom out farther (I.E. 9 vs 12).
 
   4. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types. 
   
@@ -149,7 +153,7 @@ Cities <- get_stamenmap(
              aes(x = Longitude, y = Latitude), 
              size = .5) +
   theme_map() +
-  labs(title = "St.Paul / Minneapolis Area and Starbucks Locations")
+  labs(title = "St.Paul / Minneapolis Starbucks Locations")
 ```
 
   5. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
@@ -177,7 +181,7 @@ Cities <- get_stamenmap(
            size = 4, 
            color = "Blue") +
   theme_map() + 
-  labs(title = "St.Paul / Minneapolis Area and Starbucks Locations")
+  labs(title = "St.Paul / Minneapolis Starbucks Locations Including Macalester College")
 ```
 
 ### Choropleth maps with Starbucks data (`geom_map()`)
@@ -230,10 +234,12 @@ starbucks_with_2018_pop_est %>%
   expand_limits(x = states_map$long, y = states_map$lat) + 
   theme_map() + 
   theme(legend.background = element_blank()) + 
-  labs(title = "Starbucks Locations and Popularity", 
-       fill = "Starbucks per 10000")
+  labs(title = "Starbucks Locations and their Popularity in Different US Regions", 
+       fill = "Starbucks per 10000",
+       caption = "by Juliet Cramer")
 ```
 
+- This map plots various Starbucks locations throughout the United States and demonstrates how their concentrations vary from coast to coast. The background map is colored by the number of Starbucks / 10000 people. Darker colors indicate that there are fewer Starbucks proportionally in each state to population than lighter colors. It is evident that across the West Coast, Starbucks locations are distributed more than on the East Coast. Although there are a lot of Starbucks locations on the East Coast (mostly above Virginia), the proportion of those locations to the respective state populations is slim.
 
 ### A few of your favorite things (`leaflet`)
 
@@ -273,8 +279,11 @@ leaflet(data = juliet_favorite_loc) %>%
              label = ~place, 
              weight = 10, 
              opacity = 1, 
-             color = ~pal(top3))
-
+             color = ~pal_this(top3)) %>% 
+  addLegend(pal = pal_this, 
+            values = ~top3, 
+            "bottomright", 
+            title = "In my Top 3 Favorite Locations?")
 ```
 
   
@@ -294,7 +303,11 @@ leaflet(data = juliet_favorite_loc) %>%
   addPolylines(lng = ~long, 
              lat = ~lat, 
              weight = 3, 
-             opacity = .5)
+             opacity = .5) %>% 
+  addLegend(pal = pal_this, 
+            values = ~top3, 
+            "bottomright", 
+            title = "In my Top 3 Favorite Locations?")
 ```
   
   * If there are other variables you want to add that could enhance your plot, do that now.  
@@ -359,10 +372,13 @@ departure_by_station_client <- Trips %>%
              aes(y = lat, x = long, 
              color = prop_cas)) + 
   labs(x = 'Longitude', y = 'Latitude') + 
-  ggtitle('Departures By Sation by the Proportion of Casual Riders') + 
+  ggtitle('Departures By Sation of Casual Riders')
   
 ```
   
+- I notice that the areas towards the the center of the map tend to have higher proportions of departures of casual users. I also notice that the areas farther away from the center of the map tend to have lower proportions of departures of casual users. This makes sense because people who are non-casual users typically use these stations to commute. 
+  
+
 ### COVID-19 data
 
 The following exercises will use the COVID-19 data from the NYT.
@@ -382,10 +398,16 @@ covid19 %>%
                fill = total)) +
  # creates the map "background"
   expand_limits(x = states_map$long, y = states_map$lat) + 
-  theme_map() 
+  theme(legend.background = element_blank()) + 
+  labs(title = "Recent Cumulative Number of COVID-19 Cases", 
+       fill = "Total Cumulative") + 
+  theme(legend.background = element_blank()) + 
+  theme_map()
 
 ```
   
+- I see that the recent total cumulative cases in Texas and California are pretty high compared to the rest of the country. The problem I suppose with this map would be that it really only shows which states have the highest number of COVID-19 cases today which isn't very informative.
+
   12. Now add the population of each state to the dataset and color the states by most recent cumulative cases/10,000 people. See the code for doing this with the Starbucks data. You will need to make some modifications. 
 
 ```{r}
@@ -408,8 +430,10 @@ covid19 %>%
                fill = num_cases_per_10000)) +
  # creates the map "background"
   expand_limits(x = states_map$long, y = states_map$lat) + 
-  theme_map()
-
+  labs(title = "Recent Cumulative Number of COVID-19 Cases / 10000 People", 
+       fill = "Number of cases per 10000") + 
+  theme_map() + 
+  theme(legend.background = element_blank())
 ```
 
   
@@ -422,6 +446,14 @@ These exercises use the datasets `MplsStops` and `MplsDemo` from the `carData` l
 
   14. Use the `MplsStops` dataset to find out how many stops there were for each neighborhood and the proportion of stops that were for a suspicious vehicle or person. Sort the results from most to least number of stops. Save this as a dataset called `mpls_suspicious` and display the table.
 
+```{r}
+MplsStops %>% 
+  group_by(neighborhood) %>%
+  summarise(number_stops = n(),
+            n_suspicious = sum(problem == "suspicious"),
+            prop_suspicious = n_suspicious/number_stops) %>% 
+  arrange(desc(number_stops))
+```
 ```{r}
 mpls_suspicious <- MplsStops %>% 
   group_by(neighborhood) %>%
@@ -476,6 +508,8 @@ leaflet(mpls_all) %>%
             values = ~prop_suspicious)
 ```
   
+- Around the lower neighborhoods in Minneapolis, the proportion of stops that were for suspicious person / car are much higher than in northern Minneapolis. In other words, the South-West neighborhoods in Minneapolis have a higher proportion of suspicious stops than other neighborhoods on the map.
+
   18. Use `leaflet` to create a map of your own choosing. Come up with a question you want to try to answer and use the map to help answer that question. Describe what your map shows. 
 
 ```{r}
@@ -492,12 +526,13 @@ leaflet(mpls_all) %>%
             values = ~collegeGrad)
 ```
 
-- Shows the proportion for each neighborhood that has obtained a college degree. 
+- Which neighborhoods in Minneapolis have higher education? This map shows the proportion for each neighborhood that has obtained a college degree. The North-West neighborhoods of Minneapolis, assuming a college degree is indicative of education level, are comparatively "less educated" than other neighborhoods. 
 
 ## GitHub link
 
   19. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 04_exercises.Rmd, provide a link to the 04_exercises.md file, which is the one that will be most readable on GitHub.
 
+https://github.com/jcraymer/04-Weekly-Exercises/blob/main/04_exercises.md
 
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
