@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -148,7 +148,8 @@ Cities <- get_stamenmap(
   geom_point(data = Starbucks, 
              aes(x = Longitude, y = Latitude), 
              size = .5) +
-  theme_map() 
+  theme_map() +
+  labs(title = "St.Paul / Minneapolis Area and Starbucks Locations")
 ```
 
   5. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
@@ -175,7 +176,8 @@ Cities <- get_stamenmap(
            label = "Macalester College", 
            size = 4, 
            color = "Blue") +
-  theme_map() 
+  theme_map() + 
+  labs(title = "St.Paul / Minneapolis Area and Starbucks Locations")
 ```
 
 ### Choropleth maps with Starbucks data (`geom_map()`)
@@ -222,11 +224,14 @@ starbucks_with_2018_pop_est %>%
                fill = starbucks_per_10000)) +
   geom_point(data = sstarbucks_locs_us, 
              aes(y = Latitude, x = Longitude), 
-             color = "pink", 
+             color = "yellow", 
              size = .1) +
   #This assures the map looks decently nice:
   expand_limits(x = states_map$long, y = states_map$lat) + 
-  theme_map()
+  theme_map() + 
+  theme(legend.background = element_blank()) + 
+  labs(title = "Starbucks Locations and Popularity", 
+       fill = "Starbucks per 10000")
 ```
 
 
@@ -250,8 +255,8 @@ juliet_favorite_loc <- tibble(
           39.63018436, 39.70408461, 39.62571549, 
           39.61047146, 39.54753705, 39.58109618, 
           39.8007355), 
-  top3 = c(TRUE, TRUE, TRUE, 
-           FALSE, FALSE, FALSE,
+  top3 = c(TRUE, TRUE, FALSE, 
+           FALSE, TRUE, FALSE,
            FALSE,FALSE,FALSE,
            FALSE))
 ```
@@ -259,7 +264,7 @@ juliet_favorite_loc <- tibble(
   * Create a `leaflet` map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best. Color your 3 favorite places differently than the ones that are not in your top 3 (HINT: `colorFactor()`). Add a legend that explains what the colors mean.
 
 ```{r}
-pal <- colorFactor("viridis", domain = juliet_favorite_loc$top3)
+pal_this <- colorFactor("viridis", domain = juliet_favorite_loc$top3)
 
 leaflet(data = juliet_favorite_loc) %>% 
   addProviderTiles(providers$OpenStreetMap.DE) %>%
@@ -268,7 +273,8 @@ leaflet(data = juliet_favorite_loc) %>%
              label = ~place, 
              weight = 10, 
              opacity = 1, 
-             color = ~pal(top3)) 
+             color = ~pal(top3))
+
 ```
 
   
@@ -353,7 +359,8 @@ departure_by_station_client <- Trips %>%
              aes(y = lat, x = long, 
              color = prop_cas)) + 
   labs(x = 'Longitude', y = 'Latitude') + 
-  ggtitle('Departures By Sation')
+  ggtitle('Departures By Sation by the Proportion of Casual Riders') + 
+  
 ```
   
 ### COVID-19 data
@@ -367,25 +374,48 @@ states_map <- map_data("state")
 
 covid19 %>% 
   group_by(state) %>% 
-  summarise(total = max(cases)) %>% 
+  summarise(total = max(cases)) %>%
+  mutate(state = str_to_lower(state)) %>% 
   ggplot() + 
   geom_map(map = states_map, 
            aes(map_id = state, 
                fill = total)) +
  # creates the map "background"
   expand_limits(x = states_map$long, y = states_map$lat) + 
-  theme_map()
+  theme_map() 
+
 ```
   
   12. Now add the population of each state to the dataset and color the states by most recent cumulative cases/10,000 people. See the code for doing this with the Starbucks data. You will need to make some modifications. 
 
 ```{r}
 
+census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>% 
+  separate(state, into = c("dot","state"), extra = "merge") %>% 
+  select(-dot) %>% 
+  mutate(state = str_to_lower(state))
+
+covid19 %>% 
+  group_by(state) %>% 
+  summarise(total = max(cases)) %>%
+  mutate(state = str_to_lower(state)) %>% 
+  left_join(census_pop_est_2018,
+            by = c("state" = "state")) %>% 
+  mutate(num_cases_per_10000 = (total/est_pop_2018)*10000) %>% 
+  ggplot() + 
+  geom_map(map = states_map, 
+           aes(map_id = state, 
+               fill = num_cases_per_10000)) +
+ # creates the map "background"
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  theme_map()
+
 ```
 
   
   13. **CHALLENGE** Choose 4 dates spread over the time period of the data and create the same map as in exercise 12 for each of the dates. Display the four graphs together using faceting. What do you notice?
-  
+
+
 ## Minneapolis police stops
 
 These exercises use the datasets `MplsStops` and `MplsDemo` from the `carData` library. Search for them in Help to find out more information.
@@ -433,23 +463,36 @@ mpls_all <- mpls_nbhd %>%
   17. Use `leaflet` to create a map from the `mpls_all` data  that colors the neighborhoods by `prop_suspicious`. Display the neighborhood name as you scroll over it. Describe what you observe in the map.
   
 ```{r}
+pal_new <- colorNumeric("viridis", 
+                     domain = mpls_all$prop_suspicious) 
 leaflet(mpls_all) %>%
-  leaflet(MplsStops) %>% 
   addProviderTiles(providers$Stamen.Toner) %>% 
-  addCircles(lng = ~long, 
-             lat = ~lat,
-             color = ~pal_problem(problem), 
-             weight = .5, 
-             opacity = .4) %>% 
-  addLegend(pal = pal_problem, 
-            values = ~problem)
+  addPolygons(fillColor = ~pal_new(prop_suspicious), 
+              fillOpacity = 0.7, 
+              label = ~BDNAME, 
+              color = "black", 
+              weight = 1) %>% 
+  addLegend(pal = pal_new, 
+            values = ~prop_suspicious)
 ```
   
   18. Use `leaflet` to create a map of your own choosing. Come up with a question you want to try to answer and use the map to help answer that question. Describe what your map shows. 
 
 ```{r}
-
+pal_new <- colorNumeric("viridis", 
+                     domain = mpls_all$collegeGrad) 
+leaflet(mpls_all) %>%
+  addProviderTiles(providers$Stamen.Toner) %>% 
+  addPolygons(fillColor = ~pal_new(collegeGrad), 
+              fillOpacity = 0.7, 
+              label = ~BDNAME, 
+              color = "black", 
+              weight = 1) %>% 
+  addLegend(pal = pal_new, 
+            values = ~collegeGrad)
 ```
+
+- Shows the proportion for each neighborhood that has obtained a college degree. 
 
 ## GitHub link
 
